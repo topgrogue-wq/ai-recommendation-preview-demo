@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
 const plusJakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-serif' })
 
 export const metadata: Metadata = {
-  title: 'AI Visibility Preview',
+  title: 'AI Recommendation Preview',
   description: 'Discover hidden opportunities in your real estate website',
   generator: 'v0.app',
   icons: {

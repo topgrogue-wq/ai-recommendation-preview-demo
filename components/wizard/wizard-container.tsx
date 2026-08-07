@@ -5,7 +5,7 @@ export default function WizardContainer({ children }: { children: React.ReactNod
         <div className="mb-12">
           <div className="flex items-center justify-center gap-2">
             <h1 className="font-serif text-3xl font-bold text-foreground">
-              AI Visibility Preview
+              AI Recommendation Preview
             </h1>
           </div>
           <p className="text-center text-muted-foreground mt-2 max-w-lg mx-auto">

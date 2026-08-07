@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import type { WizardFormData } from '@/app/page';
 
-const DEFAULT_PROMPT = 'Best real estate agency in Dubai for luxury buyers';
+const DEFAULT_PROMPT = 'Best real estate agency for luxury buyers';
 
 interface Step1Props {
   formData: WizardFormData;
@@ -15,7 +15,7 @@ export default function Step1AgencyInfo({ formData, onNext }: Step1Props) {
     agencyName: formData.agencyName || '',
     websiteUrl: formData.websiteUrl || '',
     businessLocation: formData.businessLocation || '',
-    aiRecommendationPrompt: formData.aiRecommendationPrompt || DEFAULT_PROMPT,
+    originalPrompt: formData.originalPrompt || formData.aiRecommendationPrompt || DEFAULT_PROMPT,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -33,8 +33,8 @@ export default function Step1AgencyInfo({ formData, onNext }: Step1Props) {
       newErrors.websiteUrl = 'Please enter a valid URL (e.g., https://example.com)';
     }
     if (!localData.businessLocation.trim()) newErrors.businessLocation = 'Business location is required';
-    if (!localData.aiRecommendationPrompt.trim()) {
-      newErrors.aiRecommendationPrompt = 'AI recommendation prompt is required';
+    if (!localData.originalPrompt.trim()) {
+      newErrors.originalPrompt = 'AI recommendation prompt is required';
     }
     return newErrors;
   };
@@ -47,15 +47,24 @@ export default function Step1AgencyInfo({ formData, onNext }: Step1Props) {
       return;
     }
 
+    const originalPrompt = localData.originalPrompt.trim();
+    const businessLocation = localData.businessLocation.trim();
+    const locationPattern = new RegExp(`\\b${escapeRegExp(businessLocation)}\\b`, 'i');
+    const analysisPrompt = locationPattern.test(originalPrompt)
+      ? originalPrompt
+      : `${originalPrompt} in ${businessLocation}`;
+
     onNext({
-      ...localData,
-      selectedScenarios: [localData.aiRecommendationPrompt.trim()],
+      agencyName: localData.agencyName.trim(),
+      websiteUrl: localData.websiteUrl.trim(),
+      businessLocation,
+      originalPrompt,
+      analysisPrompt,
+      // Kept as a compatibility alias for the existing preview steps.
+      aiRecommendationPrompt: originalPrompt,
+      selectedScenarios: [originalPrompt],
     });
   };
-
-  const locationMismatch =
-    localData.businessLocation.trim() &&
-    !localData.aiRecommendationPrompt.toLowerCase().includes(localData.businessLocation.trim().toLowerCase());
 
   return (
     <div className="space-y-6">
@@ -79,15 +88,9 @@ export default function Step1AgencyInfo({ formData, onNext }: Step1Props) {
           <input id="businessLocation" type="text" placeholder="e.g., Dubai, UAE" value={localData.businessLocation} onChange={(event) => updateField('businessLocation', event.target.value)} className={inputClass} />
         </Field>
 
-        <Field label="AI Recommendation Prompt" id="aiRecommendationPrompt" error={errors.aiRecommendationPrompt} hint="Write the question a potential customer might ask an AI assistant.">
-          <textarea id="aiRecommendationPrompt" rows={3} placeholder={DEFAULT_PROMPT} value={localData.aiRecommendationPrompt} onChange={(event) => updateField('aiRecommendationPrompt', event.target.value)} className={`${inputClass} resize-y`} />
+        <Field label="AI Recommendation Prompt" id="originalPrompt" error={errors.originalPrompt} hint="Write the question a potential customer might ask an AI assistant.">
+          <textarea id="originalPrompt" rows={3} placeholder={DEFAULT_PROMPT} value={localData.originalPrompt} onChange={(event) => updateField('originalPrompt', event.target.value)} className={`${inputClass} resize-y`} />
         </Field>
-
-        {locationMismatch && (
-          <p className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm leading-6 text-muted-foreground">
-            Your prompt doesn&apos;t mention the business location yet. You can continue as written, or add “{localData.businessLocation}” if location is important to the recommendation.
-          </p>
-        )}
 
         <div className="pt-4">
           <button type="submit" className="w-full rounded-md bg-primary px-4 py-3 font-medium text-primary-foreground transition hover:bg-primary/90 active:scale-95">
@@ -97,6 +100,10 @@ export default function Step1AgencyInfo({ formData, onNext }: Step1Props) {
       </form>
     </div>
   );
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 const inputClass = 'w-full rounded-md border border-border bg-background px-4 py-2.5 text-foreground placeholder:text-muted-foreground transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary';

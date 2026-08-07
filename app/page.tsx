@@ -10,6 +10,9 @@ export interface WizardFormData {
   agencyName: string;
   websiteUrl: string;
   businessLocation: string;
+  originalPrompt: string;
+  analysisPrompt: string;
+  // Compatibility alias used by the existing preview steps.
   aiRecommendationPrompt: string;
   selectedScenarios: string[];
 }
@@ -18,6 +21,8 @@ const initialFormData: WizardFormData = {
   agencyName: '',
   websiteUrl: '',
   businessLocation: '',
+  originalPrompt: '',
+  analysisPrompt: '',
   aiRecommendationPrompt: '',
   selectedScenarios: [],
 };

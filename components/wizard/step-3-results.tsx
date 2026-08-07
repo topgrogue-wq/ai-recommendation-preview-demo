@@ -7,6 +7,8 @@ interface Step3Props {
   formData: {
     agencyName: string;
     websiteUrl: string;
+    businessLocation: string;
+    aiRecommendationPrompt: string;
     selectedScenarios?: string[];
   };
   onBack: () => void;
@@ -23,6 +25,7 @@ const changedItems = [
 export default function Step3Results({ formData, onBack, onReset }: Step3Props) {
   const agencyName = formData.agencyName || 'Your agency';
   const websiteUrl = formData.websiteUrl || 'yourwebsite.com';
+  const businessLocation = formData.businessLocation || 'your local market';
 
   return (
     <div className="space-y-10 pb-4">
@@ -50,14 +53,14 @@ export default function Step3Results({ formData, onBack, onReset }: Step3Props) 
               <span className="text-sm font-medium text-foreground">Current Version</span>
               <span className="text-xs text-muted-foreground">{agencyName}</span>
             </div>
-            <BrowserPreview agencyName={agencyName} websiteUrl={websiteUrl} variant="current" />
+            <BrowserPreview agencyName={agencyName} websiteUrl={websiteUrl} businessLocation={businessLocation} variant="current" />
           </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between px-1">
               <span className="text-sm font-medium text-primary">AI-Optimized Version</span>
               <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">One improvement</span>
             </div>
-            <BrowserPreview agencyName={agencyName} websiteUrl={websiteUrl} variant="improved" />
+            <BrowserPreview agencyName={agencyName} websiteUrl={websiteUrl} businessLocation={businessLocation} variant="improved" />
           </div>
         </div>
       </section>

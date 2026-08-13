@@ -96,6 +96,52 @@ function discoverLinks(html: string, origin: URL) {
     .map((link) => link.url)
 }
 
+async function callN8n(input: AnalyzeInput) {
+  const webhookUrl = process.env.N8N_ANALYZE_WEBHOOK_URL
+  if (!webhookUrl) return null
+
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 30_000)
+  try {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        agencyName: input.agencyName,
+        websiteUrl: input.websiteUrl,
+        businessLocation: input.businessLocation,
+        originalPrompt: input.originalPrompt,
+        analysisPrompt: input.analysisPrompt,
+        source: 'ai-recommendation-preview',
+      }),
+      signal: controller.signal,
+      cache: 'no-store',
+    })
+    const text = await response.text()
+    let data: unknown = text
+    try { data = JSON.parse(text) } catch { /* n8n may return plain text */ }
+    if (!response.ok) throw new Error(`n8n webhook returned ${response.status}`)
+    return data
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+function normalizeN8nResponse(data: unknown, input: AnalyzeInput) {
+  const payload = Array.isArray(data) ? data[0] : data
+  const value = payload && typeof payload === 'object' ? payload as Record<string, unknown> : {}
+  const responses = Array.isArray(value.responses)
+    ? value.responses.filter((item): item is { model: string; rawAnswer: string } => Boolean(item && typeof item === 'object' && typeof (item as Record<string, unknown>).rawAnswer === 'string')).map((item) => ({ model: String(item.model || 'n8n'), rawAnswer: item.rawAnswer }))
+    : [{ model: 'n8n', rawAnswer: typeof data === 'string' ? data : JSON.stringify(data, null, 2) }]
+  return {
+    status: String(value.status || 'success'),
+    input: value.input || { ...input },
+    responses,
+    errors: Array.isArray(value.errors) ? value.errors : [],
+    n8n: true,
+  }
+}
+
 function buildPrompt(input: AnalyzeInput, pages: PageContext[]) {
   const evidence = pages.map((page) => `URL: ${page.url}\nTitle: ${page.title}\nDescription: ${page.description}\nHeadings: ${page.headings.join(' | ')}\nText: ${page.text}`).join('\n\n')
   return `You are evaluating a business website for AI recommendation visibility.\nBusiness: ${input.agencyName}\nBusiness location context: ${input.businessLocation}\nOriginal user prompt (preserve exactly as intent): ${input.originalPrompt}\nAnalysis prompt: ${input.analysisPrompt}\n\nWebsite evidence is the only source of truth. Do not infer unsupported claims, rankings, scores, or competitors. Return valid JSON only with keys: targetMentioned (boolean), recommended (boolean), qualitativePosition (string), reasoning (string), evidence (array of strings), competitorNames (array of strings), visibilityAssessment (string). Mention means the business is explicitly present in the evidence. Recommended means the answer explicitly recommends it for the analysis prompt.\n\nEvidence:\n${evidence}`
@@ -113,8 +159,12 @@ export async function POST(request: Request) {
       originalPrompt: clean(body.originalPrompt, 600),
     }
     if (!input.agencyName || !input.websiteUrl || !input.businessLocation || !input.originalPrompt) return NextResponse.json({ status: 'invalid_request', message: 'Agency name, website, location, and prompt are required.' }, { status: 400 })
-    const site = absoluteUrl(input.websiteUrl)
     input.analysisPrompt = makeAnalysisPrompt(input.originalPrompt, input.businessLocation)
+
+    const n8nResult = await callN8n(input)
+    if (n8nResult !== null) return NextResponse.json(normalizeN8nResponse(n8nResult, input))
+
+    const site = absoluteUrl(input.websiteUrl)
     const homepage = await fetchPage(site)
     if (!homepage) return NextResponse.json({ status: 'website_unavailable', message: 'The website could not be reached or did not return readable HTML.' }, { status: 422 })
     const links = discoverLinks(await (await fetch(site)).text().catch(() => ''), site)

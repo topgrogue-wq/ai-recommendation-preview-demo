@@ -91,7 +91,8 @@ function strip(value: string) {
 function discoverLinks(html: string, origin: URL) {
   return [...html.matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)]
     .map((match) => { try { return { url: new URL(match[1], origin), label: strip(match[2]).toLowerCase() } } catch { return null } })
-    .filter((link): link is { url: URL; label: string } => Boolean(link) && link.url.origin === origin.origin)
+    .filter((link): link is { url: URL; label: string } => Boolean(link))
+    .filter((link) => link.url.origin === origin.origin)
     .filter((link) => /about|service|contact|location|area|company|team/.test(`${link.url.pathname} ${link.label}`))
     .map((link) => link.url)
 }
@@ -130,15 +131,28 @@ async function callN8n(input: AnalyzeInput) {
 function normalizeN8nResponse(data: unknown, input: AnalyzeInput) {
   const payload = Array.isArray(data) ? data[0] : data
   const value = payload && typeof payload === 'object' ? payload as Record<string, unknown> : {}
+  const recommendationKeys = ['Model', 'Agency Name', 'Website', 'Location', 'Prompt', 'Answer', 'Mentioned?', 'Reason']
+  const hasRecommendation = recommendationKeys.every((key) => key in value)
   const responses = Array.isArray(value.responses)
     ? value.responses.filter((item): item is { model: string; rawAnswer: string } => Boolean(item && typeof item === 'object' && typeof (item as Record<string, unknown>).rawAnswer === 'string')).map((item) => ({ model: String(item.model || 'n8n'), rawAnswer: item.rawAnswer }))
-    : [{ model: 'n8n', rawAnswer: typeof data === 'string' ? data : JSON.stringify(data, null, 2) }]
+    : [{ model: String(value.Model || 'n8n'), rawAnswer: typeof value.Answer === 'string' ? value.Answer : typeof data === 'string' ? data : JSON.stringify(data, null, 2) }]
   return {
-    status: String(value.status || 'success'),
+    status: String(value.status || (hasRecommendation ? 'success' : 'analysis_failed')),
     input: value.input || { ...input },
     responses,
     errors: Array.isArray(value.errors) ? value.errors : [],
     n8n: true,
+    n8nResponse: hasRecommendation ? {
+      Model: String(value.Model),
+      'Agency Name': String(value['Agency Name']),
+      Website: String(value.Website),
+      Location: String(value.Location),
+      Prompt: String(value.Prompt),
+      Answer: String(value.Answer),
+      'Mentioned?': value['Mentioned?'] === true,
+      Reason: String(value.Reason),
+    } : undefined,
+    message: hasRecommendation ? undefined : 'AI recommendation analysis couldn\'t be completed.',
   }
 }
 

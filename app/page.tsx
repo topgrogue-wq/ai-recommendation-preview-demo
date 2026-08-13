@@ -21,6 +21,16 @@ export interface WizardFormData {
     responses?: Array<{ model: string; rawAnswer: string }>;
     errors?: Array<{ model: string; message: string }>;
     message?: string;
+    n8nResponse?: {
+      Model: string;
+      'Agency Name': string;
+      Website: string;
+      Location: string;
+      Prompt: string;
+      Answer: string;
+      'Mentioned?': boolean;
+      Reason: string;
+    };
   };
 }
 

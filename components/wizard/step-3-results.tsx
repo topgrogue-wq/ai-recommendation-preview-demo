@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft, Check, RotateCcw } from 'lucide-react';
+import { ChevronLeft, RotateCcw } from 'lucide-react';
 import BrowserPreview from '@/components/wizard/browser-preview';
 
 interface Step3Props {
@@ -10,22 +10,24 @@ interface Step3Props {
     businessLocation: string;
     aiRecommendationPrompt: string;
     selectedScenarios?: string[];
+    liveAnalysis?: {
+      status: string;
+      input?: Record<string, unknown>;
+      responses?: Array<{ model: string; rawAnswer: string }>;
+      errors?: Array<{ model: string; message: string }>;
+      message?: string;
+    };
   };
   onBack: () => void;
   onReset: () => void;
 }
 
-const changedItems = [
-  'Clear local authority headline',
-  'Stronger primary CTA',
-  'Better property category structure',
-  'Easier for AI to understand what the agency specializes in',
-];
-
 export default function Step3Results({ formData, onBack, onReset }: Step3Props) {
   const agencyName = formData.agencyName || 'Your agency';
   const websiteUrl = formData.websiteUrl || 'yourwebsite.com';
   const businessLocation = formData.businessLocation || 'your local market';
+  const liveResponses = formData.liveAnalysis?.responses ?? [];
+  const liveErrors = formData.liveAnalysis?.errors ?? [];
 
   return (
     <div className="space-y-10 pb-4">
@@ -65,39 +67,17 @@ export default function Step3Results({ formData, onBack, onReset }: Step3Props) 
         </div>
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-xl border border-border bg-card p-6 md:p-7">
-          <h3 className="text-lg font-semibold text-foreground">What Changed</h3>
-          <ul className="mt-5 space-y-4">
-            {changedItems.map((item) => (
-              <li key={item} className="flex items-start gap-3 text-sm leading-6 text-muted-foreground">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <Check size={13} strokeWidth={2.5} aria-hidden="true" />
-                </span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="rounded-xl border border-border bg-card p-6 md:p-7">
-          <h3 className="text-lg font-semibold text-foreground">Why this helps AI</h3>
-          <p className="mt-4 text-sm leading-7 text-muted-foreground">
-            AI assistants recommend businesses when they can quickly understand who the company serves, where it operates, and why it stands out. Making those signals clearer increases the likelihood of your agency appearing in AI-generated recommendations.
-          </p>
-        </div>
-      </section>
-
-      <section aria-labelledby="confidence-title" className="rounded-xl border border-border bg-background p-6 md:p-7">
-        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h3 id="confidence-title" className="text-lg font-semibold text-foreground">AI Recommendation Confidence</h3>
-            <p className="mt-2 text-xs text-muted-foreground">Preview estimate based on observable website signals. This is illustrative only.</p>
-          </div>
-          <div className="flex gap-10">
-            <Confidence label="Current" dots={2} />
-            <Confidence label="After Improvement" dots={4} highlighted />
-          </div>
+      <section aria-labelledby="analysis-title" className="rounded-xl border border-border bg-background p-6 md:p-7">
+        <h3 id="analysis-title" className="text-lg font-semibold text-foreground">Live AI analysis</h3>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">Raw model responses are shown below so the findings remain inspectable and evidence-based.</p>
+        <div className="mt-5 space-y-4">
+          {liveResponses.map((response) => (
+            <article key={response.model} className="rounded-lg border border-border bg-card p-4">
+              <p className="text-xs font-medium text-primary">{response.model}</p>
+              <pre className="mt-3 whitespace-pre-wrap font-sans text-sm leading-6 text-muted-foreground">{response.rawAnswer}</pre>
+            </article>
+          ))}
+          {liveErrors.map((error) => <p key={error.model} className="text-sm text-destructive">{error.model}: {error.message}</p>)}
         </div>
       </section>
 
@@ -136,15 +116,3 @@ export default function Step3Results({ formData, onBack, onReset }: Step3Props) 
   );
 }
 
-function Confidence({ label, dots, highlighted = false }: { label: string; dots: number; highlighted?: boolean }) {
-  return (
-    <div>
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      <div className="mt-2 flex gap-1.5" aria-label={`${dots} out of 5 confidence`}>
-        {[0, 1, 2, 3, 4].map((dot) => (
-          <span key={dot} className={`h-2.5 w-2.5 rounded-full ${dot < dots ? (highlighted ? 'bg-primary' : 'bg-muted-foreground') : 'bg-muted'}`} />
-        ))}
-      </div>
-    </div>
-  );
-}

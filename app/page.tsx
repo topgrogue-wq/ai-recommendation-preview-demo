@@ -15,6 +15,13 @@ export interface WizardFormData {
   // Compatibility alias used by the existing preview steps.
   aiRecommendationPrompt: string;
   selectedScenarios: string[];
+  liveAnalysis?: {
+    status: string;
+    input?: Record<string, unknown>;
+    responses?: Array<{ model: string; rawAnswer: string }>;
+    errors?: Array<{ model: string; message: string }>;
+    message?: string;
+  };
 }
 
 const initialFormData: WizardFormData = {

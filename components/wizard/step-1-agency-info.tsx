@@ -18,6 +18,8 @@ export default function Step1AgencyInfo({ formData, onNext }: Step1Props) {
     originalPrompt: formData.originalPrompt || formData.aiRecommendationPrompt || DEFAULT_PROMPT,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState('');
 
   const updateField = (field: keyof typeof localData, value: string) => {
     setLocalData((current) => ({ ...current, [field]: value }));
@@ -39,8 +41,9 @@ export default function Step1AgencyInfo({ formData, onNext }: Step1Props) {
     return newErrors;
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    setAnalysisError('');
     const newErrors = validate();
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -54,16 +57,37 @@ export default function Step1AgencyInfo({ formData, onNext }: Step1Props) {
       ? originalPrompt
       : `${originalPrompt} in ${businessLocation}`;
 
-    onNext({
-      agencyName: localData.agencyName.trim(),
-      websiteUrl: localData.websiteUrl.trim(),
-      businessLocation,
-      originalPrompt,
-      analysisPrompt,
-      // Kept as a compatibility alias for the existing preview steps.
-      aiRecommendationPrompt: originalPrompt,
-      selectedScenarios: [originalPrompt],
-    });
+    setIsAnalyzing(true);
+    try {
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          agencyName: localData.agencyName.trim(),
+          websiteUrl: localData.websiteUrl.trim(),
+          businessLocation,
+          originalPrompt,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok || result.status === 'analysis_failed' || result.status === 'website_unavailable') {
+        throw new Error(result.message || 'The live analysis could not be completed.');
+      }
+      onNext({
+        agencyName: localData.agencyName.trim(),
+        websiteUrl: localData.websiteUrl.trim(),
+        businessLocation,
+        originalPrompt,
+        analysisPrompt,
+        aiRecommendationPrompt: originalPrompt,
+        selectedScenarios: [originalPrompt],
+        liveAnalysis: result,
+      });
+    } catch (error) {
+      setAnalysisError(error instanceof Error ? error.message : 'The live analysis could not be completed.');
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   return (
@@ -92,9 +116,11 @@ export default function Step1AgencyInfo({ formData, onNext }: Step1Props) {
           <textarea id="originalPrompt" rows={3} placeholder={DEFAULT_PROMPT} value={localData.originalPrompt} onChange={(event) => updateField('originalPrompt', event.target.value)} className={`${inputClass} resize-y`} />
         </Field>
 
+        {analysisError && <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm leading-6 text-destructive">{analysisError}</p>}
+
         <div className="pt-4">
-          <button type="submit" className="w-full rounded-md bg-primary px-4 py-3 font-medium text-primary-foreground transition hover:bg-primary/90 active:scale-95">
-            Analyze AI Recommendations →
+          <button type="submit" disabled={isAnalyzing} className="w-full rounded-md bg-primary px-4 py-3 font-medium text-primary-foreground transition hover:bg-primary/90 active:scale-95 disabled:cursor-wait disabled:opacity-60">
+            {isAnalyzing ? 'Analyzing website and AI recommendations…' : 'Analyze AI Recommendations →'}
           </button>
         </div>
       </form>

@@ -32,6 +32,7 @@ export interface WizardFormData {
       Reason: string;
     };
   };
+  phase3Response?: unknown;
 }
 
 const initialFormData: WizardFormData = {

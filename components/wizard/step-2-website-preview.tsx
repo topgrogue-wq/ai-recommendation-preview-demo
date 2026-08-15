@@ -50,7 +50,8 @@ export default function Step2WebsitePreview({ formData, onNext, onBack }: Step2P
       }
 
       onNext({ phase3Response });
-    } catch {
+    } catch (error) {
+      console.error('[v0] Phase 3 website analysis failed:', error);
       setWebsiteAnalysisError("We couldn't start the website analysis. Please try again.");
     } finally {
       setIsStartingWebsiteAnalysis(false);

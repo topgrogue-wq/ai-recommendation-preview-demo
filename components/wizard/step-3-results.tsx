@@ -1,7 +1,6 @@
 'use client';
 
 import { ChevronLeft, RotateCcw } from 'lucide-react';
-import BrowserPreview from '@/components/wizard/browser-preview';
 import type { WizardFormData } from '@/app/page';
 
 type AnalysisSection = {
@@ -90,17 +89,15 @@ export default function Step3Results({ formData, onBack, onReset }: Step3Props) 
     <div className="space-y-10 pb-4">
       <div className="mb-2">
         <h2 className="font-serif text-3xl font-bold tracking-tight text-foreground md:text-4xl">Step 3: Website Analysis</h2>
-        <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">Live analysis for {agencyName} using the n8n Phase 3 response.</p>
+        <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">Live analysis of your website using evidence from the submitted page.</p>
       </div>
 
-      <section aria-labelledby="comparison-title" className="space-y-5">
-        <div>
-          <h3 id="comparison-title" className="text-lg font-semibold text-foreground">Website preview</h3>
-          <p className="mt-1 text-sm text-muted-foreground">The preview continues to use the website URL provided in Step 1.</p>
-        </div>
-        <div className="grid gap-8 lg:grid-cols-2 lg:gap-6">
-          <div className="space-y-3"><div className="flex items-center justify-between px-1"><span className="text-sm font-medium text-foreground">Current Version</span><span className="text-xs text-muted-foreground">{agencyName}</span></div><BrowserPreview agencyName={agencyName} websiteUrl={websiteUrl} businessLocation={businessLocation} variant="current" /></div>
-          <div className="space-y-3"><div className="flex items-center justify-between px-1"><span className="text-sm font-medium text-primary">AI-Optimized Version</span><span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">One improvement</span></div><BrowserPreview agencyName={agencyName} websiteUrl={websiteUrl} businessLocation={businessLocation} variant="improved" /></div>
+      <section aria-labelledby="website-information-title" className="rounded-xl border border-border bg-card p-5 md:p-6">
+        <h3 id="website-information-title" className="sr-only">Website Information</h3>
+        <div className="grid gap-5 md:grid-cols-3">
+          <div><p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">Agency Name</p><p className="mt-2 break-words text-sm font-medium leading-6 text-foreground">{agencyName}</p></div>
+          <div><p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">Website</p><p className="mt-2 break-words text-sm font-medium leading-6 text-foreground">{websiteUrl}</p></div>
+          <div><p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">Location</p><p className="mt-2 break-words text-sm font-medium leading-6 text-foreground">{businessLocation}</p></div>
         </div>
       </section>
 
@@ -109,19 +106,20 @@ export default function Step3Results({ formData, onBack, onReset }: Step3Props) 
         <h3 id="friction-title" className="mt-2 text-xl font-semibold text-foreground">{analysis.friction.title}</h3>
         <div className="mt-5 space-y-4">
           <Detail label="Problem" value={analysis.friction.problem} />
-          <Detail label="Why it matters" value={analysis.friction.whyItMatters} />
-          <Detail label="Evidence" value={analysis.friction.evidence} />
+          <div className="border-t border-primary/30 pt-4"><p className="text-xs font-medium uppercase tracking-[0.12em] text-primary">Evidence from submitted website</p><p className="mt-2 text-sm leading-7 text-foreground">{analysis.friction.evidence}</p></div>
+          <Detail label="Why It Matters" value={analysis.friction.whyItMatters} />
         </div>
       </section>
 
       <section aria-labelledby="improvement-title" className="rounded-xl border border-primary/25 bg-primary/5 p-6 md:p-7">
-        <p className="text-xs font-medium uppercase tracking-[0.12em] text-primary">Improvement</p>
+        <p className="text-xs font-medium uppercase tracking-[0.12em] text-primary">Recommended Improvement</p>
         <h3 id="improvement-title" className="mt-2 text-xl font-semibold text-foreground">{analysis.improvement.title}</h3>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">Recommendation based on the identified friction.</p>
         <div className="mt-5 space-y-4">
           <Detail label="Recommendation" value={analysis.improvement.recommendation} />
-          <Detail label="Structural change" value={analysis.improvement.structuralChange} />
-          <Detail label="Example copy" value={analysis.improvement.exampleCopy} />
-          <Detail label="Expected direction" value={analysis.improvement.expectedDirection} />
+          <Detail label="What to Change" value={analysis.improvement.structuralChange} />
+          <Detail label="Example" value={analysis.improvement.exampleCopy} />
+          <Detail label="Expected Direction" value={analysis.improvement.expectedDirection} />
         </div>
       </section>
 

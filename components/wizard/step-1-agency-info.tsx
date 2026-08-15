@@ -91,41 +91,59 @@ export default function Step1AgencyInfo({ formData, onNext }: Step1Props) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="mb-8">
-        <h2 className="mb-2 font-serif text-2xl font-bold text-foreground">Step 1: Analyze Your Website</h2>
-        <p className="text-muted-foreground">
-          Tell us about your business and the exact recommendation question you want AI platforms to answer.
-        </p>
+    <div className="space-y-8">
+      <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Step 01 / Agency profile</p>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">Start with the essentials.</h2>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">Give the analysis enough context to understand your agency, market, and the recommendation question that matters most.</p>
+        </div>
+        <span className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground">Takes about 2 minutes</span>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <Field label="Agency Name" id="agencyName" error={errors.agencyName}>
-          <input id="agencyName" type="text" placeholder="e.g., District UAE" value={localData.agencyName} onChange={(event) => updateField('agencyName', event.target.value)} className={inputClass} />
-        </Field>
+      <form onSubmit={handleSubmit} className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="space-y-5">
+          <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="Agency Name" id="agencyName" error={errors.agencyName}>
+            <input id="agencyName" type="text" placeholder="e.g., District UAE" value={localData.agencyName} onChange={(event) => updateField('agencyName', event.target.value)} className={inputClass} />
+          </Field>
 
-        <Field label="Website URL" id="websiteUrl" error={errors.websiteUrl} hint="We&apos;ll analyze publicly available information from your website.">
-          <input id="websiteUrl" type="url" placeholder="https://yourwebsite.com" value={localData.websiteUrl} onChange={(event) => updateField('websiteUrl', event.target.value)} className={inputClass} />
-        </Field>
+          <Field label="Business Location" id="businessLocation" error={errors.businessLocation} hint="City, region, country, or service area.">
+            <input id="businessLocation" type="text" placeholder="e.g., Dubai, UAE" value={localData.businessLocation} onChange={(event) => updateField('businessLocation', event.target.value)} className={inputClass} />
+          </Field>
+          </div>
 
-        <Field label="Business Location" id="businessLocation" error={errors.businessLocation} hint="Use the city, region, country, or service area you want AI to associate with your business.">
-          <input id="businessLocation" type="text" placeholder="e.g., Dubai, UAE" value={localData.businessLocation} onChange={(event) => updateField('businessLocation', event.target.value)} className={inputClass} />
-        </Field>
+          <Field label="Website URL" id="websiteUrl" error={errors.websiteUrl} hint="We&apos;ll analyze publicly available information from your website.">
+            <input id="websiteUrl" type="url" placeholder="https://yourwebsite.com" value={localData.websiteUrl} onChange={(event) => updateField('websiteUrl', event.target.value)} className={inputClass} />
+          </Field>
 
-        <Field label="AI Recommendation Prompt" id="originalPrompt" error={errors.originalPrompt} hint="Write the question a potential customer might ask an AI assistant.">
-          <textarea id="originalPrompt" rows={3} placeholder={DEFAULT_PROMPT} value={localData.originalPrompt} onChange={(event) => updateField('originalPrompt', event.target.value)} className={`${inputClass} resize-y`} />
-        </Field>
+          <Field label="AI Recommendation Prompt" id="originalPrompt" error={errors.originalPrompt} hint="Write the question a potential customer might ask an AI assistant.">
+            <textarea id="originalPrompt" rows={5} placeholder={DEFAULT_PROMPT} value={localData.originalPrompt} onChange={(event) => updateField('originalPrompt', event.target.value)} className={`${inputClass} resize-y`} />
+          </Field>
 
-        {analysisError && <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm leading-6 text-destructive">{analysisError}</p>}
+          {analysisError && <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm leading-6 text-destructive">{analysisError}</p>}
 
-        <div className="pt-4">
-          <button type="submit" disabled={isAnalyzing} className="w-full rounded-md bg-primary px-4 py-3 font-medium text-primary-foreground transition hover:bg-primary/90 active:scale-95 disabled:cursor-wait disabled:opacity-60">
+          <button type="submit" disabled={isAnalyzing} className="w-full rounded-lg bg-primary px-4 py-3.5 font-semibold text-primary-foreground transition hover:bg-primary/90 active:scale-[.99] disabled:cursor-wait disabled:opacity-60">
             {isAnalyzing ? 'Analyzing website and AI recommendations…' : 'Analyze AI Recommendations →'}
           </button>
         </div>
+
+        <aside className="rounded-xl border border-border bg-background p-5 lg:self-start">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Your inputs</p>
+          <div className="mt-5 space-y-5">
+            <InfoItem label="Public website" value="Used to ground the analysis in evidence." />
+            <InfoItem label="Business location" value="Used to add market context to the AI prompt." />
+            <InfoItem label="Recommendation question" value="Passed through unchanged before analysis." />
+          </div>
+          <div className="mt-6 border-t border-border pt-5"><p className="text-xs leading-5 text-muted-foreground">Your original prompt is preserved exactly. A separate analysis prompt adds location context only when needed.</p></div>
+        </aside>
       </form>
     </div>
   );
+}
+
+function InfoItem({ label, value }: { label: string; value: string }) {
+  return <div><p className="text-sm font-medium text-foreground">{label}</p><p className="mt-1 text-xs leading-5 text-muted-foreground">{value}</p></div>;
 }
 
 function escapeRegExp(value: string) {

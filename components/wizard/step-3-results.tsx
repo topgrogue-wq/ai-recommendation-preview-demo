@@ -87,12 +87,12 @@ export default function Step3Results({ formData, onBack, onReset }: Step3Props) 
 
   return (
     <div className="space-y-10 pb-4">
-      <div className="mb-2">
-        <h2 className="font-serif text-3xl font-bold tracking-tight text-foreground md:text-4xl">Step 3: Website Analysis</h2>
-        <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">Live analysis of your website using evidence from the submitted page.</p>
+      <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-start sm:justify-between">
+        <div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Step 03 / Website analysis</p><h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">Turn the signal into action.</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">One evidence-backed friction and one practical improvement, grounded in the website you submitted.</p></div>
+        <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary"><span className="h-1.5 w-1.5 rounded-full bg-primary" />Analysis complete</span>
       </div>
 
-      <section aria-labelledby="website-information-title" className="rounded-xl border border-border bg-card p-5 md:p-6">
+      <section aria-labelledby="website-information-title" className="rounded-xl border border-border bg-background p-5 md:p-6">
         <h3 id="website-information-title" className="sr-only">Website Information</h3>
         <div className="grid gap-5 md:grid-cols-3">
           <div><p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">Agency Name</p><p className="mt-2 break-words text-sm font-medium leading-6 text-foreground">{agencyName}</p></div>
@@ -102,7 +102,7 @@ export default function Step3Results({ formData, onBack, onReset }: Step3Props) 
       </section>
 
       <section aria-labelledby="friction-title" className="rounded-xl border border-border bg-card p-6 md:p-7">
-        <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">One Friction</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">One friction</p>
         <h3 id="friction-title" className="mt-2 text-xl font-semibold text-foreground">{analysis.friction.title}</h3>
         <div className="mt-5 space-y-4">
           <Detail label="Problem" value={analysis.friction.problem} />

@@ -67,7 +67,7 @@ interface Step3Props {
 export default function Step3Results({ formData, onBack, onReset }: Step3Props) {
   const agencyName = formData.agencyName || 'Your agency';
   const websiteUrl = formData.websiteUrl || 'yourwebsite.com';
-  const businessLocation = formData.businessLocation || 'your local market';
+  const recommendationQuestion = formData.originalPrompt || 'your submitted recommendation question';
   const analysis = normalizePhase3(formData.phase3Response);
 
   if (!analysis) {
@@ -88,7 +88,7 @@ export default function Step3Results({ formData, onBack, onReset }: Step3Props) 
   return (
     <div className="space-y-10 pb-4">
       <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-start sm:justify-between">
-        <div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Step 03 / Website analysis</p><h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">Turn the signal into action.</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">One evidence-backed friction and one practical improvement, grounded in the website you submitted.</p></div>
+        <div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Step 03 / Website analysis</p><h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">Turn the signal into action.</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">Analysis for: <span className="font-medium text-foreground">{recommendationQuestion}</span></p></div>
         <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary"><span className="h-1.5 w-1.5 rounded-full bg-primary" />Analysis complete</span>
       </div>
 
@@ -97,7 +97,7 @@ export default function Step3Results({ formData, onBack, onReset }: Step3Props) 
         <div className="grid gap-5 md:grid-cols-3">
           <div><p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">Agency Name</p><p className="mt-2 break-words text-sm font-medium leading-6 text-foreground">{agencyName}</p></div>
           <div><p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">Website</p><p className="mt-2 break-words text-sm font-medium leading-6 text-foreground">{websiteUrl}</p></div>
-          <div><p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">Location</p><p className="mt-2 break-words text-sm font-medium leading-6 text-foreground">{businessLocation}</p></div>
+          <div><p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">Recommendation question</p><p className="mt-2 break-words text-sm font-medium leading-6 text-foreground">{recommendationQuestion}</p></div>
         </div>
       </section>
 

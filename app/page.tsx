@@ -9,7 +9,6 @@ import Step3Results from '@/components/wizard/step-3-results';
 export interface WizardFormData {
   agencyName: string;
   websiteUrl: string;
-  businessLocation: string;
   originalPrompt: string;
   analysisPrompt: string;
   // Compatibility alias used by the existing preview steps.
@@ -38,7 +37,6 @@ export interface WizardFormData {
 const initialFormData: WizardFormData = {
   agencyName: '',
   websiteUrl: '',
-  businessLocation: '',
   originalPrompt: '',
   analysisPrompt: '',
   aiRecommendationPrompt: '',

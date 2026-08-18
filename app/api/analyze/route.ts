@@ -11,8 +11,8 @@ const MODELS = ['openai/gpt-oss-120b', 'openai/o4-mini'] as const
 type AnalyzeInput = {
   agencyName: string
   websiteUrl: string
-  businessLocation: string
-  originalPrompt: string
+  recommendationPrompt: string
+  originalPrompt?: string
   analysisPrompt?: string
 }
 
@@ -20,15 +20,6 @@ type PageContext = { url: string; title: string; description: string; headings: 
 
 function clean(value: unknown, max: number) {
   return typeof value === 'string' ? value.trim().slice(0, max) : ''
-}
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
-function makeAnalysisPrompt(originalPrompt: string, location: string) {
-  const pattern = new RegExp(`\\b${escapeRegExp(location)}\\b`, 'i')
-  return pattern.test(originalPrompt) ? originalPrompt : `${originalPrompt} in ${location}`
 }
 
 function absoluteUrl(value: string) {
@@ -110,9 +101,7 @@ async function callN8n(input: AnalyzeInput) {
       body: JSON.stringify({
         agencyName: input.agencyName,
         websiteUrl: input.websiteUrl,
-        businessLocation: input.businessLocation,
-        originalPrompt: input.originalPrompt,
-        analysisPrompt: input.analysisPrompt,
+        recommendationPrompt: input.recommendationPrompt,
         source: 'ai-recommendation-preview',
       }),
       signal: controller.signal,
@@ -158,7 +147,7 @@ function normalizeN8nResponse(data: unknown, input: AnalyzeInput) {
 
 function buildPrompt(input: AnalyzeInput, pages: PageContext[]) {
   const evidence = pages.map((page) => `URL: ${page.url}\nTitle: ${page.title}\nDescription: ${page.description}\nHeadings: ${page.headings.join(' | ')}\nText: ${page.text}`).join('\n\n')
-  return `You are evaluating a business website for AI recommendation visibility.\nBusiness: ${input.agencyName}\nBusiness location context: ${input.businessLocation}\nOriginal user prompt (preserve exactly as intent): ${input.originalPrompt}\nAnalysis prompt: ${input.analysisPrompt}\n\nWebsite evidence is the only source of truth. Do not infer unsupported claims, rankings, scores, or competitors. Return valid JSON only with keys: targetMentioned (boolean), recommended (boolean), qualitativePosition (string), reasoning (string), evidence (array of strings), competitorNames (array of strings), visibilityAssessment (string). Mention means the business is explicitly present in the evidence. Recommended means the answer explicitly recommends it for the analysis prompt.\n\nEvidence:\n${evidence}`
+  return `You are evaluating a business website for AI recommendation visibility.\nBusiness: ${input.agencyName}\nRecommendation question (preserve exactly as intent): ${input.recommendationPrompt}\nAnalysis prompt: ${input.analysisPrompt}\n\nWebsite evidence is the only source of truth. Do not infer unsupported claims, rankings, scores, or competitors. Return valid JSON only with keys: targetMentioned (boolean), recommended (boolean), qualitativePosition (string), reasoning (string), evidence (array of strings), competitorNames (array of strings), visibilityAssessment (string). Mention means the business is explicitly present in the evidence. Recommended means the answer explicitly recommends it for the analysis prompt.\n\nEvidence:\n${evidence}`
 }
 
 export async function POST(request: Request) {
@@ -169,11 +158,11 @@ export async function POST(request: Request) {
     const input: AnalyzeInput = {
       agencyName: clean(body.agencyName, 160),
       websiteUrl: clean(body.websiteUrl, 500),
-      businessLocation: clean(body.businessLocation, 160),
-      originalPrompt: clean(body.originalPrompt, 600),
+      recommendationPrompt: clean(body.recommendationPrompt, 600),
     }
-    if (!input.agencyName || !input.websiteUrl || !input.businessLocation || !input.originalPrompt) return NextResponse.json({ status: 'invalid_request', message: 'Agency name, website, location, and prompt are required.' }, { status: 400 })
-    input.analysisPrompt = makeAnalysisPrompt(input.originalPrompt, input.businessLocation)
+    if (!input.agencyName || !input.websiteUrl || !input.recommendationPrompt) return NextResponse.json({ status: 'invalid_request', message: 'Agency name, website, and recommendation question are required.' }, { status: 400 })
+    input.originalPrompt = input.recommendationPrompt
+    input.analysisPrompt = input.recommendationPrompt
 
     const n8nResult = await callN8n(input)
     if (n8nResult !== null) return NextResponse.json(normalizeN8nResponse(n8nResult, input))

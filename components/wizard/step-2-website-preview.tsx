@@ -28,9 +28,7 @@ export default function Step2WebsitePreview({ formData, onNext, onBack }: Step2P
         body: JSON.stringify({
           agencyName: formData.agencyName,
           websiteUrl: formData.websiteUrl,
-          businessLocation: formData.businessLocation,
-          originalPrompt: formData.originalPrompt,
-          analysisPrompt: formData.analysisPrompt,
+          recommendationPrompt: formData.originalPrompt,
           aiAnswer: response?.Answer ?? '',
           mentioned: response?.['Mentioned?'] ?? false,
           reason: response?.Reason ?? '',
@@ -64,7 +62,7 @@ export default function Step2WebsitePreview({ formData, onNext, onBack }: Step2P
       const result = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ agencyName: formData.agencyName, websiteUrl: formData.websiteUrl, businessLocation: formData.businessLocation, originalPrompt: formData.originalPrompt }),
+        body: JSON.stringify({ agencyName: formData.agencyName, websiteUrl: formData.websiteUrl, recommendationPrompt: formData.originalPrompt }),
       });
       const data = await result.json();
       if (!result.ok || !data.n8nResponse) throw new Error('AI recommendation analysis couldn\'t be completed.');
@@ -86,11 +84,11 @@ export default function Step2WebsitePreview({ formData, onNext, onBack }: Step2P
   return (
     <div className="space-y-8 pb-4">
       <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-start sm:justify-between">
-        <div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Step 02 / AI recommendation</p><h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">Here&apos;s what AI says.</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">A live recommendation response for your prompt, with a clear signal showing whether your agency appeared.</p></div>
+        <div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Step 02 / AI recommendation</p><h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">AI Recommendation Analysis</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">See how AI assistants evaluate your business for the recommendation question you submitted.</p></div>
         <span className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold ${mentioned ? 'border-primary/40 bg-primary/10 text-primary' : 'border-border text-muted-foreground'}`}><span className={`h-1.5 w-1.5 rounded-full ${mentioned ? 'bg-primary' : 'bg-muted-foreground'}`} />{mentioned ? 'Agency mentioned' : 'Not mentioned'}</span>
       </div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(250px,.7fr)]">
-        <section className="rounded-xl border border-primary/30 bg-primary/[0.04] p-6" aria-labelledby="recommendation-title"><div className="flex items-center justify-between gap-4"><h3 id="recommendation-title" className="text-lg font-semibold text-foreground">AI recommendation</h3><span className="text-xs font-medium text-primary">Live response</span></div><dl className="mt-5 space-y-4 border-t border-primary/10 pt-5"><div><dt className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Prompt</dt><dd className="mt-2 text-sm leading-6 text-foreground">{response.Prompt}</dd></div><div><dt className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Location</dt><dd className="mt-2 text-sm leading-6 text-foreground">{response.Location}</dd></div></dl><div className="mt-6 border-t border-primary/10 pt-5"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">AI response</p><div className="mt-3 whitespace-pre-wrap text-sm leading-7 text-foreground">{response.Answer}</div></div></section>
+        <section className="rounded-xl border border-primary/30 bg-primary/[0.04] p-6" aria-labelledby="recommendation-title"><div className="flex items-center justify-between gap-4"><h3 id="recommendation-title" className="text-lg font-semibold text-foreground">AI recommendation</h3><span className="text-xs font-medium text-primary">Live response</span></div><dl className="mt-5 space-y-4 border-t border-primary/10 pt-5"><div><dt className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Prompt</dt><dd className="mt-2 text-sm leading-6 text-foreground">{response.Prompt}</dd></div></dl><div className="mt-6 border-t border-primary/10 pt-5"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">AI response</p><div className="mt-3 whitespace-pre-wrap text-sm leading-7 text-foreground">{response.Answer}</div></div></section>
         <section className="rounded-xl border border-border bg-background p-6" aria-labelledby="agency-result-title"><div className="flex items-start gap-3"><span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${mentioned ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'}`}>{mentioned ? <Check size={17} aria-hidden="true" /> : <X size={17} aria-hidden="true" />}</span><div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Agency signal</p><h3 id="agency-result-title" className="mt-2 text-lg font-semibold text-foreground">{mentioned ? 'You appeared in the answer.' : 'You did not appear in the answer.'}</h3></div></div><div className="mt-6 border-t border-border pt-5"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Agency checked</p><p className="mt-2 text-sm font-medium leading-6 text-foreground">{response['Agency Name']}</p><p className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Context</p><p className="mt-2 text-sm leading-6 text-muted-foreground">{response.Reason}</p></div></section>
       </div>
       <div className="border-t border-border pt-5">

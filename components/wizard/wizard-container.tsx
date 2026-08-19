@@ -40,7 +40,7 @@ export default function WizardContainer({ children }: { children: React.ReactNod
             </nav>
             <div className="mt-8 hidden rounded-xl border border-border bg-card p-4 lg:block">
               <p className="text-xs font-semibold text-foreground">What you&apos;ll get</p>
-              <p className="mt-2 text-xs leading-5 text-muted-foreground">A live AI recommendation check, one clear visibility gap, and one evidence-based website improvement.</p>
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">A relevant AI recommendation test, one clear visibility gap, and one evidence-based website improvement.</p>
             </div>
           </aside>
 

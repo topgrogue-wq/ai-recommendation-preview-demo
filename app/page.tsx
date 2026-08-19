@@ -6,14 +6,43 @@ import Step1AgencyInfo from '@/components/wizard/step-1-agency-info';
 import Step2WebsitePreview from '@/components/wizard/step-2-website-preview';
 import Step3Results from '@/components/wizard/step-3-results';
 
+export interface AgencyProfile {
+  markets: string[];
+  propertyTypes: string[];
+  services: string[];
+  audiences: string[];
+  specializations: string[];
+  commercialThemes: string[];
+  summary: string;
+}
+
+export interface PromptOption {
+  id: string;
+  prompt: string;
+  commercialReason: string;
+  evidence: string;
+  confidence: 'high' | 'medium' | 'low' | string;
+}
+
+export interface Phase1AnalysisResponse {
+  status: string;
+  agency?: { name: string; website: string };
+  agencyProfile?: AgencyProfile;
+  promptOptions?: PromptOption[];
+  message?: string;
+}
+
 export interface WizardFormData {
   agencyName: string;
   websiteUrl: string;
   originalPrompt: string;
   analysisPrompt: string;
-  // Compatibility alias used by the existing preview steps.
   aiRecommendationPrompt: string;
   selectedScenarios: string[];
+  agencyProfile: AgencyProfile | null;
+  promptOptions: PromptOption[];
+  selectedPrompt: PromptOption | null;
+  phase1Analysis: Phase1AnalysisResponse | null;
   liveAnalysis?: {
     status: string;
     input?: Record<string, unknown>;
@@ -38,6 +67,10 @@ const initialFormData: WizardFormData = {
   agencyName: '',
   websiteUrl: '',
   originalPrompt: '',
+  agencyProfile: null,
+  promptOptions: [],
+  selectedPrompt: null,
+  phase1Analysis: null,
   analysisPrompt: '',
   aiRecommendationPrompt: '',
   selectedScenarios: [],

@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { Check, ChevronDown, Loader2 } from 'lucide-react';
-import type { AgencyProfile, Phase1AnalysisResponse, PromptOption, WizardFormData } from '@/app/page';
+import type { PromptOption, WizardFormData } from '@/app/page';
+
+type Phase1PromptResponse = { status: 'success'; promptOptions: PromptOption[] };
 
 interface Step1Props {
   formData: WizardFormData;
@@ -13,7 +15,7 @@ const inputClass = 'w-full rounded-md border border-border bg-background px-4 py
 
 export default function Step1AgencyInfo({ formData, onNext }: Step1Props) {
   const [localData, setLocalData] = useState({ agencyName: formData.agencyName || '', websiteUrl: formData.websiteUrl || '' });
-  const [phase1, setPhase1] = useState<Phase1AnalysisResponse | null>(formData.phase1Analysis);
+  const [phase1, setPhase1] = useState<Phase1PromptResponse | null>(formData.phase1Analysis as Phase1PromptResponse | null);
   const [selectedPrompt, setSelectedPrompt] = useState<PromptOption | null>(formData.selectedPrompt);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isGeneratingPrompts, setIsGeneratingPrompts] = useState(false);
@@ -56,17 +58,18 @@ export default function Step1AgencyInfo({ formData, onNext }: Step1Props) {
       window.setTimeout(() => setLoadingStage('Finding commercially relevant AI questions...'), 4200),
     ];
     try {
-      const response = await fetch('/api/prompts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ agencyName: localData.agencyName.trim(), websiteUrl: localData.websiteUrl.trim() }) });
-      const result = await response.json() as Phase1AnalysisResponse;
+      const response = await fetch('/api/phase-1-prompts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ agencyName: localData.agencyName.trim(), websiteUrl: localData.websiteUrl.trim() }) });
+      const result = await response.json() as Partial<Phase1PromptResponse>;
       if (!response.ok || result.status !== 'success' || !Array.isArray(result.promptOptions) || result.promptOptions.length === 0) {
-        setPromptGenerationError(result.status === 'success' ? "We couldn't identify a relevant recommendation question from the available website information." : "We couldn't analyze this website.");
+        setPromptGenerationError("We couldn't generate relevant AI questions.");
         return;
       }
-      setPhase1(result);
+      const normalizedResult = result as Phase1PromptResponse;
+      setPhase1(normalizedResult);
       setSelectedPrompt(null);
     } catch (error) {
       console.error('[v0] Phase 1 request failed:', error);
-      setPromptGenerationError("We couldn't analyze this website.");
+      setPromptGenerationError("We couldn't generate relevant AI questions.");
     } finally {
       timers.forEach(window.clearTimeout);
       setIsGeneratingPrompts(false);
@@ -75,7 +78,7 @@ export default function Step1AgencyInfo({ formData, onNext }: Step1Props) {
 
   const handleContinue = () => {
     if (!phase1 || !selectedPrompt) return;
-    onNext({ agencyName: localData.agencyName.trim(), websiteUrl: localData.websiteUrl.trim(), agencyProfile: phase1.agencyProfile || null, promptOptions: phase1.promptOptions || [], selectedPrompt, phase1Analysis: phase1, originalPrompt: selectedPrompt.prompt, analysisPrompt: selectedPrompt.prompt, aiRecommendationPrompt: selectedPrompt.prompt, selectedScenarios: [selectedPrompt.prompt] });
+    onNext({ agencyName: localData.agencyName.trim(), websiteUrl: localData.websiteUrl.trim(), agencyProfile: null, promptOptions: phase1.promptOptions, selectedPrompt, phase1Analysis: phase1, originalPrompt: selectedPrompt.prompt, analysisPrompt: selectedPrompt.prompt, aiRecommendationPrompt: selectedPrompt.prompt, selectedScenarios: [selectedPrompt.prompt] });
   };
 
   return <div className="space-y-8">
@@ -88,7 +91,7 @@ export default function Step1AgencyInfo({ formData, onNext }: Step1Props) {
       <div className="space-y-5">
         <Field label="Agency Name" id="agencyName" error={errors.agencyName}><input id="agencyName" type="text" placeholder="e.g., KAYE & CO" value={localData.agencyName} onChange={(event) => updateField('agencyName', event.target.value)} className={inputClass} /></Field>
         <Field label="Website URL" id="websiteUrl" error={errors.websiteUrl} hint="We'll analyze publicly available information from your website."><input id="websiteUrl" type="url" placeholder="https://yourwebsite.com" value={localData.websiteUrl} onChange={(event) => updateField('websiteUrl', event.target.value)} className={inputClass} /></Field>
-        {promptGenerationError && <div role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3"><p className="text-sm font-medium text-destructive">{promptGenerationError}</p><p className="mt-1 text-xs leading-5 text-destructive/80">Check the website URL and try again.</p><button type="submit" className="mt-3 text-xs font-semibold text-destructive underline underline-offset-4">Try Again</button></div>}
+        {promptGenerationError && <div role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3"><p className="text-sm font-medium text-destructive">{promptGenerationError}</p><p className="mt-1 text-xs leading-5 text-destructive/80">Please check the website and try again.</p><button type="submit" className="mt-3 text-xs font-semibold text-destructive underline underline-offset-4">Try Again</button></div>}
         <button type="submit" disabled={!validInputs || isGeneratingPrompts} className="w-full rounded-lg bg-primary px-4 py-3.5 font-semibold text-primary-foreground transition hover:bg-primary/90 active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-50">{isGeneratingPrompts ? <span className="inline-flex items-center gap-2"><Loader2 size={16} className="animate-spin" aria-hidden="true" />{loadingStage}</span> : 'Find Relevant AI Prompts →'}</button>
 
         {isGeneratingPrompts && <div className="rounded-xl border border-border bg-background p-5" aria-live="polite"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Generating prompt options</p><p className="mt-3 text-sm text-muted-foreground">{loadingStage}</p></div>}

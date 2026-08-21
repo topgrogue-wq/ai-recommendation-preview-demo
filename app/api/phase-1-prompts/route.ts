@@ -65,8 +65,8 @@ export async function POST(request: Request) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ agencyName, websiteUrl }),
-      cache: 'no-store',
-      signal: AbortSignal.timeout(30_000),
+        cache: 'no-store',
+
     })
     const rawResponse = await response.text()
     console.log('[Phase 1 n8n raw response]', rawResponse)

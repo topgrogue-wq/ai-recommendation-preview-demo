@@ -20,22 +20,15 @@ export async function POST(request: Request) {
     const websiteUrl = clean(body.websiteUrl, 500)
     if (!agencyName || !websiteUrl) return NextResponse.json({ status: 'invalid_request' }, { status: 400 })
 
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 30_000)
-    try {
-      const response = await fetch(PHASE_1_WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agencyName, websiteUrl }),
-        signal: controller.signal,
-        cache: 'no-store',
-      })
-      if (!response.ok) return NextResponse.json({ status: 'failed' }, { status: 502 })
-      const data = await response.json() as unknown
-      return NextResponse.json(data)
-    } finally {
-      clearTimeout(timeout)
-    }
+    const response = await fetch(PHASE_1_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agencyName, websiteUrl }),
+      cache: 'no-store',
+    })
+    if (!response.ok) return NextResponse.json({ status: 'failed' }, { status: 502 })
+    const data = await response.json() as unknown
+    return NextResponse.json(data)
   } catch (error) {
     console.error('[v0] Phase 1 prompt generation failed:', error)
     return NextResponse.json({ status: 'failed' }, { status: 502 })

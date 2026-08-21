@@ -6,6 +6,11 @@ import type { Phase2AnalysisResult, WizardFormData } from '@/app/page';
 
 type RecommendationResponse = Phase2AnalysisResult;
 
+function ModelProviderBadge({ provider }: { provider: string | null }) {
+  const label = provider?.trim() || 'AI';
+  return <span className="inline-flex items-center rounded-full border border-primary/25 bg-background px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">{label}</span>;
+}
+
 function normalizePhase2Response(value: WizardFormData['phase2Result']): RecommendationResponse | null {
   if (!value || typeof value.prompt !== 'string' || !value.prompt.trim() || typeof value.mentioned !== 'boolean' || typeof value.reason !== 'string' || !value.reason.trim()) return null;
   return value;
@@ -71,8 +76,7 @@ export default function Step2WebsitePreview({ formData, onNext, onBack }: Step2P
   }
 
   const mentioned = response.mentioned;
-  console.log('[Phase 2 normalized result]', response);
-  console.log('[Phase 2 mentioned value]', mentioned, typeof mentioned);
+  const providerLabel = response.model?.trim() || 'AI';
   return (
     <div className="space-y-8 pb-4">
       <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-start sm:justify-between">
@@ -80,8 +84,8 @@ export default function Step2WebsitePreview({ formData, onNext, onBack }: Step2P
         <span className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold ${mentioned ? 'border-primary/40 bg-primary/10 text-primary' : 'border-border text-muted-foreground'}`}><span className={`h-1.5 w-1.5 rounded-full ${mentioned ? 'bg-primary' : 'bg-muted-foreground'}`} />{mentioned ? 'Agency mentioned' : 'Not mentioned'}</span>
       </div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(250px,.7fr)]">
-        <section className="rounded-xl border border-primary/30 bg-primary/[0.04] p-6" aria-labelledby="recommendation-title"><div className="flex items-center justify-between gap-4"><h3 id="recommendation-title" className="text-lg font-semibold text-foreground">AI recommendation</h3><span className="text-xs font-medium text-primary">Live response</span></div><dl className="mt-5 space-y-4 border-t border-primary/10 pt-5"><div><dt className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Prompt</dt><dd className="mt-2 text-sm leading-6 text-foreground">{response.prompt}</dd></div></dl>{response.answer && <div className="mt-6 border-t border-primary/10 pt-5"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">AI response</p><div className="mt-3 whitespace-pre-wrap text-sm leading-7 text-foreground">{response.answer}</div></div>}</section>
-        <section className="rounded-xl border border-border bg-background p-6" aria-labelledby="agency-result-title"><div className="flex items-start gap-3"><span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${mentioned ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'}`}>{mentioned ? <Check size={17} aria-hidden="true" /> : <X size={17} aria-hidden="true" />}</span><div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Agency signal</p><h3 id="agency-result-title" className="mt-2 text-lg font-semibold text-foreground">{mentioned ? 'You appeared in the answer.' : 'You did not appear in the answer.'}</h3></div></div><div className="mt-6 border-t border-border pt-5"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Agency checked</p><p className="mt-2 text-sm font-medium leading-6 text-foreground">{response.agencyName}</p><p className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Context</p><p className="mt-2 text-sm leading-6 text-muted-foreground">{response.reason}</p></div></section>
+        <section className="rounded-xl border border-primary/30 bg-primary/[0.04] p-6" aria-labelledby="recommendation-title"><div className="flex flex-wrap items-center justify-between gap-3"><h3 id="recommendation-title" className="text-lg font-semibold text-foreground">AI recommendation</h3><div className="flex items-center gap-2"><ModelProviderBadge provider={response.model} /><span className="text-xs font-medium text-primary">Live response</span></div></div><dl className="mt-5 space-y-4 border-t border-primary/10 pt-5"><div><dt className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Prompt</dt><dd className="mt-2 text-sm leading-6 text-foreground">{response.prompt}</dd></div></dl>{response.answer && <div className="mt-6 border-t border-primary/10 pt-5"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">AI response</p><div className="mt-3 whitespace-pre-wrap text-sm leading-7 text-foreground">{response.answer}</div></div>}</section>
+        <section className="rounded-xl border border-border bg-background p-6" aria-labelledby="agency-result-title"><div className="flex items-start gap-3"><span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${mentioned ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'}`}>{mentioned ? <Check size={17} aria-hidden="true" /> : <X size={17} aria-hidden="true" />}</span><div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{providerLabel} visibility</p><h3 id="agency-result-title" className="mt-2 text-lg font-semibold text-foreground">{mentioned ? 'You appeared in the answer.' : 'You did not appear in the answer.'}</h3></div></div><div className="mt-6 border-t border-border pt-5"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Agency checked</p><p className="mt-2 text-sm font-medium leading-6 text-foreground">{response.agencyName}</p><p className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Context</p><p className="mt-2 text-sm leading-6 text-muted-foreground">{response.reason}</p></div></section>
       </div>
       <div className="border-t border-border pt-5">
         {websiteAnalysisError && <p role="alert" className="mb-3 text-sm leading-6 text-destructive">{websiteAnalysisError}</p>}

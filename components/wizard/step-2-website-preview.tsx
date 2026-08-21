@@ -4,6 +4,40 @@ import { useState } from 'react';
 import { AlertCircle, Check, ChevronLeft, LoaderCircle, X } from 'lucide-react';
 import type { WizardFormData } from '@/app/page';
 
+type RecommendationResponse = {
+  Model: string;
+  'Agency Name': string;
+  Website: string;
+  Prompt: string;
+  Answer: string;
+  'Mentioned?': boolean;
+  Reason: string;
+};
+
+function normalizePhase2Response(value: WizardFormData['phase2Result']): RecommendationResponse | null {
+  let current: unknown = value;
+  if (Array.isArray(current)) current = current[0];
+  if (current && typeof current === 'object') {
+    const record = current as Record<string, unknown>;
+    current = record.output ?? record.response ?? record.data ?? current;
+  }
+  if (Array.isArray(current)) current = current[0];
+  if (!current || typeof current !== 'object') return null;
+  const record = current as Record<string, unknown>;
+  const answer = record.Answer ?? record.answer;
+  const prompt = record.Prompt ?? record.prompt;
+  if (typeof answer !== 'string' || typeof prompt !== 'string') return null;
+  return {
+    Model: String(record.Model ?? record.model ?? 'n8n'),
+    'Agency Name': String(record['Agency Name'] ?? record.agencyName ?? ''),
+    Website: String(record.Website ?? record.websiteUrl ?? ''),
+    Prompt: prompt,
+    Answer: answer,
+    'Mentioned?': record['Mentioned?'] === true || record.mentioned === true,
+    Reason: String(record.Reason ?? record.reason ?? ''),
+  };
+}
+
 interface Step2Props {
   formData: WizardFormData;
   onNext: (data: Partial<WizardFormData>) => void;
@@ -11,11 +45,10 @@ interface Step2Props {
 }
 
 export default function Step2WebsitePreview({ formData, onNext, onBack }: Step2Props) {
-  const [isRetrying, setIsRetrying] = useState(false);
   const [isStartingWebsiteAnalysis, setIsStartingWebsiteAnalysis] = useState(false);
   const [websiteAnalysisError, setWebsiteAnalysisError] = useState('');
-  const analysis = formData.liveAnalysis;
-  const response = analysis?.n8nResponse;
+  const response = normalizePhase2Response(formData.phase2Result);
+  const phase2Failed = Boolean(formData.phase2Error);
 
   const handleStartWebsiteAnalysis = async () => {
     setIsStartingWebsiteAnalysis(true);
@@ -56,28 +89,12 @@ export default function Step2WebsitePreview({ formData, onNext, onBack }: Step2P
     }
   };
 
-  const handleRetry = async () => {
-    setIsRetrying(true);
-    try {
-      const result = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ agencyName: formData.agencyName, websiteUrl: formData.websiteUrl, recommendationPrompt: formData.originalPrompt }),
-      });
-      const data = await result.json();
-      if (!result.ok || !data.n8nResponse) throw new Error('AI recommendation analysis couldn\'t be completed.');
-      onNext({ liveAnalysis: data });
-    } finally {
-      setIsRetrying(false);
-    }
-  };
-
-  if (isRetrying || analysis?.status === 'loading') {
+  if (formData.isRunningPhase2) {
     return <div className="flex min-h-[28rem] flex-col items-center justify-center gap-4 text-center"><LoaderCircle className="animate-spin text-primary" size={24} aria-hidden="true" /><div><h2 className="font-serif text-2xl font-bold text-foreground">Analyzing AI recommendations...</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Waiting for the n8n analysis to return.</p></div></div>;
   }
 
-  if (analysis?.status === 'analysis_failed' || analysis?.status === 'website_unavailable' || !response) {
-    return <div className="space-y-6"><button onClick={onBack} className="flex items-center gap-2 rounded-md bg-secondary px-4 py-3 font-medium text-secondary-foreground transition hover:bg-secondary/90"><ChevronLeft size={18} aria-hidden="true" />Back</button><section className="flex min-h-[22rem] flex-col items-center justify-center rounded-lg border border-border bg-card p-8 text-center" role="alert"><AlertCircle className="text-muted-foreground" size={25} aria-hidden="true" /><h2 className="mt-4 font-serif text-2xl font-bold text-foreground">AI recommendation analysis couldn&apos;t be completed.</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Please try again.</p><button onClick={handleRetry} className="mt-6 rounded-md bg-primary px-5 py-3 font-medium text-primary-foreground transition hover:bg-primary/90">Retry analysis</button></section></div>;
+  if (phase2Failed || !response) {
+    return <div className="space-y-6"><button onClick={onBack} className="flex items-center gap-2 rounded-md bg-secondary px-4 py-3 font-medium text-secondary-foreground transition hover:bg-secondary/90"><ChevronLeft size={18} aria-hidden="true" />Back</button><section className="flex min-h-[22rem] flex-col items-center justify-center rounded-lg border border-border bg-card p-8 text-center" role="alert"><AlertCircle className="text-muted-foreground" size={25} aria-hidden="true" /><h2 className="mt-4 font-serif text-2xl font-bold text-foreground">AI recommendation analysis couldn&apos;t be completed.</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Please return to Step 1 and retry the selected prompt.</p></section></div>;
   }
 
   const mentioned = response['Mentioned?'];

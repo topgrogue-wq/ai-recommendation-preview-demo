@@ -32,6 +32,8 @@ export interface Phase1AnalysisResponse {
   message?: string;
 }
 
+export type Phase2AnalysisResult = Record<string, unknown>;
+
 export interface WizardFormData {
   agencyName: string;
   websiteUrl: string;
@@ -43,6 +45,9 @@ export interface WizardFormData {
   promptOptions: PromptOption[];
   selectedPrompt: PromptOption | null;
   phase1Analysis: Phase1AnalysisResponse | null;
+  phase2Result: Phase2AnalysisResult | null;
+  isRunningPhase2: boolean;
+  phase2Error: string | null;
   liveAnalysis?: {
     status: string;
     input?: Record<string, unknown>;
@@ -71,6 +76,9 @@ const initialFormData: WizardFormData = {
   promptOptions: [],
   selectedPrompt: null,
   phase1Analysis: null,
+  phase2Result: null,
+  isRunningPhase2: false,
+  phase2Error: null,
   analysisPrompt: '',
   aiRecommendationPrompt: '',
   selectedScenarios: [],

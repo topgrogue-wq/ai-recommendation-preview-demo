@@ -21,6 +21,8 @@ export default function Step1AgencyInfo({ formData, onNext }: Step1Props) {
   const [isGeneratingPrompts, setIsGeneratingPrompts] = useState(false);
   const [promptGenerationError, setPromptGenerationError] = useState<string | null>(null);
   const [loadingStage, setLoadingStage] = useState('Analyzing your agency...');
+  const [isRunningPhase2, setIsRunningPhase2] = useState(false);
+  const [phase2Error, setPhase2Error] = useState<string | null>(formData.phase2Error);
 
   const updateField = (field: keyof typeof localData, value: string) => {
     setLocalData((current) => ({ ...current, [field]: value }));
@@ -76,9 +78,29 @@ export default function Step1AgencyInfo({ formData, onNext }: Step1Props) {
     }
   };
 
-  const handleContinue = () => {
-    if (!phase1 || !selectedPrompt) return;
-    onNext({ agencyName: localData.agencyName.trim(), websiteUrl: localData.websiteUrl.trim(), agencyProfile: null, promptOptions: phase1.promptOptions, selectedPrompt, phase1Analysis: phase1, originalPrompt: selectedPrompt.prompt, analysisPrompt: selectedPrompt.prompt, aiRecommendationPrompt: selectedPrompt.prompt, selectedScenarios: [selectedPrompt.prompt] });
+  const handleContinue = async () => {
+    if (!phase1 || !selectedPrompt || isRunningPhase2) return;
+    const agencyName = localData.agencyName.trim();
+    const websiteUrl = localData.websiteUrl.trim();
+    setIsRunningPhase2(true);
+    setPhase2Error(null);
+    console.log('[Phase 2 selected prompt]', selectedPrompt);
+    console.log('[Phase 2 request]', { agencyName, websiteUrl, recommendationPrompt: selectedPrompt.prompt });
+    try {
+      const response = await fetch('/api/phase-2-recommendation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agencyName, websiteUrl, recommendationPrompt: selectedPrompt.prompt, selectedPrompt }),
+      });
+      const result = await response.json() as Record<string, unknown>;
+      if (!response.ok || result.status === 'error') throw new Error("We couldn't complete the AI recommendation check.");
+      onNext({ agencyName, websiteUrl, agencyProfile: null, promptOptions: phase1.promptOptions, selectedPrompt, phase1Analysis: phase1, originalPrompt: selectedPrompt.prompt, analysisPrompt: selectedPrompt.prompt, aiRecommendationPrompt: selectedPrompt.prompt, selectedScenarios: [selectedPrompt.prompt], phase2Result: result, isRunningPhase2: false, phase2Error: null, liveAnalysis: undefined });
+    } catch (error) {
+      console.error('[v0] Phase 2 request failed:', error);
+      setPhase2Error("We couldn't complete the AI recommendation check.");
+    } finally {
+      setIsRunningPhase2(false);
+    }
   };
 
   return <div className="space-y-8">
@@ -96,7 +118,7 @@ export default function Step1AgencyInfo({ formData, onNext }: Step1Props) {
 
         {isGeneratingPrompts && <div className="rounded-xl border border-border bg-background p-5" aria-live="polite"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Generating prompt options</p><p className="mt-3 text-sm text-muted-foreground">{loadingStage}</p></div>}
 
-        {phase1 && <section aria-labelledby="prompt-options-title" className="space-y-5 border-t border-border pt-7"><div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Relevant AI questions</p><h3 id="prompt-options-title" className="mt-2 text-2xl font-semibold tracking-tight text-foreground">Which recommendation do you want to test?</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">These questions are based on what your website currently shows your agency offers. Choose the one that matters most to your business.</p></div><div className="space-y-3">{(phase1.promptOptions || []).map((option) => <PromptCard key={option.id} option={option} selected={selectedPrompt?.id === option.id} onSelect={() => setSelectedPrompt(option)} />)}</div><button type="button" onClick={handleContinue} disabled={!selectedPrompt} className="w-full rounded-lg bg-primary px-4 py-3.5 font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">AI Recommendation Preview →</button></section>}
+        {phase1 && <section aria-labelledby="prompt-options-title" className="space-y-5 border-t border-border pt-7"><div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Relevant AI questions</p><h3 id="prompt-options-title" className="mt-2 text-2xl font-semibold tracking-tight text-foreground">Which recommendation do you want to test?</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">These questions are based on what your website currently shows your agency offers. Choose the one that matters most to your business.</p></div><div className="space-y-3">{(phase1.promptOptions || []).map((option) => <PromptCard key={option.id} option={option} selected={selectedPrompt?.id === option.id} onSelect={() => setSelectedPrompt(option)} />)}</div>{phase2Error && <div role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3"><p className="text-sm font-medium text-destructive">{phase2Error}</p><p className="mt-1 text-xs leading-5 text-destructive/80">Please try again.</p></div>}<button type="button" onClick={handleContinue} disabled={!selectedPrompt || isRunningPhase2} className="w-full rounded-lg bg-primary px-4 py-3.5 font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-wait disabled:opacity-50">{isRunningPhase2 ? <span className="inline-flex items-center gap-2"><Loader2 size={16} className="animate-spin" aria-hidden="true" />Checking AI Recommendations...</span> : 'AI Recommendation Preview →'}</button></section>}
       </div>
 
       <aside className="rounded-xl border border-border bg-background p-5 lg:self-start"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">What we&apos;ll analyze</p><div className="mt-5 space-y-5"><InfoItem label="Public website" value="We use your website to understand your markets, services and specializations." /><InfoItem label="Relevant AI questions" value="We'll generate recommendation questions grounded in what your agency actually offers." /></div><div className="mt-6 border-t border-border pt-5"><p className="text-xs leading-5 text-muted-foreground">You&apos;ll choose which recommendation question you want to test before we run the AI visibility check.</p></div></aside>

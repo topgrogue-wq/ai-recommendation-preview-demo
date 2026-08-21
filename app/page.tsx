@@ -32,7 +32,17 @@ export interface Phase1AnalysisResponse {
   message?: string;
 }
 
-export type Phase2AnalysisResult = Record<string, unknown>;
+export type Phase2AnalysisResult = {
+  model: string | null;
+  agencyName: string;
+  website: string;
+  prompt: string;
+  answer: string | null;
+  mentioned: boolean;
+  recommended: boolean | null;
+  position: number | null;
+  reason: string;
+};
 
 export interface WizardFormData {
   agencyName: string;

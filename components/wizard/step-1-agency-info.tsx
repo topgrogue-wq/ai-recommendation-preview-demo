@@ -92,9 +92,9 @@ export default function Step1AgencyInfo({ formData, onNext }: Step1Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ agencyName, websiteUrl, recommendationPrompt: selectedPrompt.prompt, selectedPrompt }),
       });
-      const result = await response.json() as Record<string, unknown>;
-      if (!response.ok || result.status === 'error') throw new Error("We couldn't complete the AI recommendation check.");
-      onNext({ agencyName, websiteUrl, agencyProfile: null, promptOptions: phase1.promptOptions, selectedPrompt, phase1Analysis: phase1, originalPrompt: selectedPrompt.prompt, analysisPrompt: selectedPrompt.prompt, aiRecommendationPrompt: selectedPrompt.prompt, selectedScenarios: [selectedPrompt.prompt], phase2Result: result, isRunningPhase2: false, phase2Error: null, liveAnalysis: undefined });
+      const result = await response.json() as { status?: string; result?: WizardFormData['phase2Result'] };
+      if (!response.ok || result.status !== 'success' || !result.result) throw new Error("We couldn't complete the AI recommendation check.");
+      onNext({ agencyName, websiteUrl, agencyProfile: null, promptOptions: phase1.promptOptions, selectedPrompt, phase1Analysis: phase1, originalPrompt: selectedPrompt.prompt, analysisPrompt: selectedPrompt.prompt, aiRecommendationPrompt: selectedPrompt.prompt, selectedScenarios: [selectedPrompt.prompt], phase2Result: result.result, isRunningPhase2: false, phase2Error: null, liveAnalysis: undefined });
     } catch (error) {
       console.error('[v0] Phase 2 request failed:', error);
       setPhase2Error("We couldn't complete the AI recommendation check.");

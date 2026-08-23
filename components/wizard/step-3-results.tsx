@@ -2,7 +2,7 @@
 
 import { ChevronLeft, RotateCcw } from 'lucide-react';
 import type { WizardFormData } from '@/app/page';
-import { CALENDLY_BOOKING_URL } from '@/lib/config';
+import { getCalendlyBookingUrl } from '@/lib/config';
 
 type AnalysisSection = {
   title: string;
@@ -67,14 +67,9 @@ interface Step3Props {
 
 export default function Step3Results({ formData, onBack, onReset }: Step3Props) {
   const handleVisibilityReviewBooking = () => {
-    if (!CALENDLY_BOOKING_URL || !CALENDLY_BOOKING_URL.startsWith('https://') || CALENDLY_BOOKING_URL === 'YOUR_CALENDLY_BOOKING_URL') {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[Calendly] Booking URL has not been configured.');
-      }
-      return;
-    }
-
-    window.location.assign(CALENDLY_BOOKING_URL);
+    const bookingUrl = getCalendlyBookingUrl();
+    if (!bookingUrl) return;
+    window.location.assign(bookingUrl);
   };
 
   const agencyName = formData.agencyName || 'Your agency';

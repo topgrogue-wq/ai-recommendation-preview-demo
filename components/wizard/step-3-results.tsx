@@ -2,6 +2,7 @@
 
 import { ChevronLeft, RotateCcw } from 'lucide-react';
 import type { WizardFormData } from '@/app/page';
+import { CALENDLY_BOOKING_URL } from '@/lib/config';
 
 type AnalysisSection = {
   title: string;
@@ -65,6 +66,17 @@ interface Step3Props {
 }
 
 export default function Step3Results({ formData, onBack, onReset }: Step3Props) {
+  const handleVisibilityReviewBooking = () => {
+    if (!CALENDLY_BOOKING_URL || !CALENDLY_BOOKING_URL.startsWith('https://') || CALENDLY_BOOKING_URL === 'YOUR_CALENDLY_BOOKING_URL') {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[Calendly] Booking URL has not been configured.');
+      }
+      return;
+    }
+
+    window.location.assign(CALENDLY_BOOKING_URL);
+  };
+
   const agencyName = formData.agencyName || 'Your agency';
   const websiteUrl = formData.websiteUrl || 'yourwebsite.com';
   const recommendationQuestion = formData.originalPrompt || 'your submitted recommendation question';
@@ -125,7 +137,7 @@ export default function Step3Results({ formData, onBack, onReset }: Step3Props) 
 
       <div className="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:items-center">
         <button onClick={onBack} className="flex items-center justify-center gap-2 rounded-md bg-secondary px-4 py-3 font-medium text-secondary-foreground transition hover:bg-secondary/90"><ChevronLeft size={18} aria-hidden="true" /> Back</button>
-        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:justify-end"><button type="button" className="rounded-md border border-primary bg-primary px-5 py-3 font-medium text-primary-foreground transition hover:bg-primary/90">Request My Full AI Visibility Review</button><button onClick={onReset} className="flex items-center justify-center gap-2 rounded-md border border-border bg-card px-5 py-3 font-medium text-foreground transition hover:bg-secondary"><RotateCcw size={17} aria-hidden="true" /> Analyze Another Website</button></div>
+        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:justify-end"><button type="button" onClick={handleVisibilityReviewBooking} className="rounded-md border border-primary bg-primary px-5 py-3 font-medium text-primary-foreground transition hover:bg-primary/90">Request My Full AI Visibility Review</button><button onClick={onReset} className="flex items-center justify-center gap-2 rounded-md border border-border bg-card px-5 py-3 font-medium text-foreground transition hover:bg-secondary"><RotateCcw size={17} aria-hidden="true" /> Analyze Another Website</button></div>
       </div>
     </div>
   );

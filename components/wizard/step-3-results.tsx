@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { ChevronLeft, RotateCcw } from 'lucide-react';
 import type { WizardFormData } from '@/app/page';
 import { getCalendlyBookingUrl } from '@/lib/config';
@@ -49,6 +50,10 @@ function normalizePhase3(value: unknown): Phase3Analysis | null {
   };
 }
 
+function asRecord(value: unknown): Record<string, any> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, any> : {};
+}
+
 function Detail({ label, value }: { label: string; value?: string }) {
   if (!value) return null;
   return (
@@ -66,9 +71,78 @@ interface Step3Props {
 }
 
 export default function Step3Results({ formData, onBack, onReset }: Step3Props) {
-  const handleVisibilityReviewBooking = () => {
+  const [isRequestingFullReview, setIsRequestingFullReview] = useState(false);
+
+  const handleVisibilityReviewBooking = async () => {
+    if (isRequestingFullReview) return;
     const bookingUrl = getCalendlyBookingUrl();
     if (!bookingUrl) return;
+
+    const phase3 = asRecord(formData.phase3Response);
+    const phase3Data = asRecord(phase3.output || phase3.response || phase3.data || phase3);
+    const phase3Friction = asRecord(phase3Data.friction || analysis?.friction);
+    const phase3Improvement = asRecord(phase3Data.improvement || analysis?.improvement);
+    const phase2 = formData.phase2Result;
+    const selectedPrompt = formData.selectedPrompt;
+    const profile = formData.agencyProfile;
+    const missing = [
+      !formData.agencyName && 'agencyName',
+      !formData.websiteUrl && 'websiteUrl',
+      !profile && 'agencyProfile',
+      !selectedPrompt?.prompt && 'selectedPrompt.prompt',
+      !phase2 && 'phase2Result',
+      !phase3Friction.title && 'phase3Result.friction',
+      !phase3Improvement.title && 'phase3Result.improvement',
+    ].filter(Boolean);
+
+    const phase4Payload = {
+      source: 'ai-recommendation-preview' as const,
+      agencyName: formData.agencyName,
+      websiteUrl: formData.websiteUrl,
+      agencyProfile: profile,
+      selectedPrompt,
+      aiRecommendation: phase2 && {
+        model: phase2.model ?? null,
+        prompt: phase2.prompt,
+        answer: phase2.answer ?? null,
+        mentioned: phase2.mentioned,
+        recommended: phase2.recommended ?? null,
+        position: phase2.position ?? null,
+        reason: phase2.reason,
+      },
+      websiteAnalysis: {
+        pageLabel: typeof phase3Data.pageLabel === 'string' && phase3Data.pageLabel.trim() ? phase3Data.pageLabel : 'Submitted page',
+        pageUrl: typeof phase3Data.pageUrl === 'string' && phase3Data.pageUrl.trim() ? phase3Data.pageUrl : formData.websiteUrl,
+        friction: {
+          title: phase3Friction.title,
+          problem: phase3Friction.problem,
+          evidence: phase3Friction.evidence,
+          whyItMatters: phase3Friction.whyItMatters,
+          confidence: phase3Friction.confidence,
+        },
+        improvement: {
+          title: phase3Improvement.title,
+          recommendation: phase3Improvement.recommendation,
+          structuralChange: phase3Improvement.structuralChange,
+          exampleCopy: phase3Improvement.exampleCopy,
+          expectedDirection: phase3Improvement.expectedDirection,
+          confidence: phase3Improvement.confidence,
+        },
+      },
+      previewAssetExists: Boolean(phase3Friction.title && phase3Improvement.title),
+      requestedAt: new Date().toISOString(),
+    };
+
+    if (missing.length > 0) console.error('[Phase 4 payload missing analysis data]', missing);
+    else {
+      setIsRequestingFullReview(true);
+      console.log('[Phase 4 payload]', phase4Payload);
+      try {
+        await fetch('/api/phase-4-outreach', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(phase4Payload) });
+      } catch (error) {
+        console.error('[Phase 4 outreach request failed]', error);
+      }
+    }
     window.location.assign(bookingUrl);
   };
 
@@ -132,7 +206,7 @@ export default function Step3Results({ formData, onBack, onReset }: Step3Props) 
 
       <div className="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:items-center">
         <button onClick={onBack} className="flex items-center justify-center gap-2 rounded-md bg-secondary px-4 py-3 font-medium text-secondary-foreground transition hover:bg-secondary/90"><ChevronLeft size={18} aria-hidden="true" /> Back</button>
-        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:justify-end"><button type="button" onClick={handleVisibilityReviewBooking} className="rounded-md border border-primary bg-primary px-5 py-3 font-medium text-primary-foreground transition hover:bg-primary/90">Request My Full AI Visibility Review</button><button onClick={onReset} className="flex items-center justify-center gap-2 rounded-md border border-border bg-card px-5 py-3 font-medium text-foreground transition hover:bg-secondary"><RotateCcw size={17} aria-hidden="true" /> Analyze Another Website</button></div>
+        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:justify-end"><button type="button" onClick={handleVisibilityReviewBooking} disabled={isRequestingFullReview} className="rounded-md border border-primary bg-primary px-5 py-3 font-medium text-primary-foreground transition hover:bg-primary/90 disabled:cursor-wait disabled:opacity-60">{isRequestingFullReview ? 'Preparing Your Review...' : 'Request My Full AI Visibility Review'}</button><button onClick={onReset} className="flex items-center justify-center gap-2 rounded-md border border-border bg-card px-5 py-3 font-medium text-foreground transition hover:bg-secondary"><RotateCcw size={17} aria-hidden="true" /> Analyze Another Website</button></div>
       </div>
     </div>
   );

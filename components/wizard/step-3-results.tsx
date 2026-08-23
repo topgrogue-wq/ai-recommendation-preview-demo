@@ -138,9 +138,22 @@ export default function Step3Results({ formData, onBack, onReset }: Step3Props) 
       setIsRequestingFullReview(true);
       console.log('[Phase 4 payload]', phase4Payload);
       try {
-        await fetch('/api/phase-4-outreach', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(phase4Payload) });
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), 8000);
+        const response = await fetch('/api/phase-4-outreach', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(phase4Payload),
+          keepalive: true,
+          signal: controller.signal,
+        });
+        window.clearTimeout(timeout);
+        if (!response.ok) {
+          const message = await response.text();
+          console.error('[v0] Phase 4 outreach rejected:', response.status, message);
+        }
       } catch (error) {
-        console.error('[Phase 4 outreach request failed]', error);
+        console.error('[v0] Phase 4 outreach request failed:', error);
       }
     }
     window.location.assign(bookingUrl);

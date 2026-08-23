@@ -46,11 +46,15 @@ export async function POST(request: Request) {
 
   console.log('[Phase 4 n8n request]', payload);
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 7000);
     const n8nResponse = await fetch(PHASE_4_WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
     console.log('[Phase 4 n8n status]', n8nResponse.status);
     if (!n8nResponse.ok) {
       return NextResponse.json({ status: 'upstream_error', message: 'Phase 4 webhook rejected the request.' }, { status: 502 });

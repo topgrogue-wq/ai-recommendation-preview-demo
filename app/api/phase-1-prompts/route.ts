@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 
 export const runtime = 'nodejs'
 
-const PHASE_1_WEBHOOK_URL = 'https://n8n-production-888fb.up.railway.app/webhook-test/aeo-preview/phase-1'
+const PHASE_1_WEBHOOK_URL = 'https://n8n-production-888fb.up.railway.app/webhook/aeo-preview/phase-1'
 const MAX_BODY = 8_000
 
 function clean(value: unknown, max: number) {

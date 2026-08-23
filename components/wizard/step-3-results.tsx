@@ -72,6 +72,7 @@ interface Step3Props {
 
 export default function Step3Results({ formData, onBack, onReset }: Step3Props) {
   const [isRequestingFullReview, setIsRequestingFullReview] = useState(false);
+  const [phase4Error, setPhase4Error] = useState('');
 
   const handleVisibilityReviewBooking = async () => {
     if (isRequestingFullReview) return;
@@ -133,30 +134,36 @@ export default function Step3Results({ formData, onBack, onReset }: Step3Props) 
       requestedAt: new Date().toISOString(),
     };
 
-    if (missing.length > 0) console.error('[Phase 4 payload missing analysis data]', missing);
-    else {
-      setIsRequestingFullReview(true);
-      console.log('[Phase 4 payload]', phase4Payload);
-      try {
-        const controller = new AbortController();
-        const timeout = window.setTimeout(() => controller.abort(), 8000);
-        const response = await fetch('/api/phase-4-outreach', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(phase4Payload),
-          keepalive: true,
-          signal: controller.signal,
-        });
-        window.clearTimeout(timeout);
-        if (!response.ok) {
-          const message = await response.text();
-          console.error('[v0] Phase 4 outreach rejected:', response.status, message);
-        }
-      } catch (error) {
-        console.error('[v0] Phase 4 outreach request failed:', error);
-      }
+    if (missing.length > 0) {
+      setPhase4Error(`Some analysis data is missing: ${missing.join(', ')}. Please return to the previous step and try again.`);
+      return;
     }
-    window.location.assign(bookingUrl);
+
+    setPhase4Error('');
+    setIsRequestingFullReview(true);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15000);
+    try {
+      const response = await fetch('/api/phase-4-outreach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(phase4Payload),
+        signal: controller.signal,
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok || result?.status !== 'accepted') {
+        console.error('[v0] Phase 4 outreach rejected:', response.status, result);
+        setPhase4Error(result?.message || 'The full review request could not be sent to n8n. Keep the Phase 4 webhook listening, then try again.');
+        return;
+      }
+      window.location.assign(bookingUrl);
+    } catch (error) {
+      console.error('[v0] Phase 4 outreach request failed:', error);
+      setPhase4Error(error instanceof DOMException && error.name === 'AbortError' ? 'n8n took too long to respond. Keep the Phase 4 webhook listening, then try again.' : 'The full review request could not be sent to n8n.');
+    } finally {
+      window.clearTimeout(timeout);
+      setIsRequestingFullReview(false);
+    }
   };
 
   const agencyName = formData.agencyName || 'Your agency';
@@ -216,6 +223,8 @@ export default function Step3Results({ formData, onBack, onReset }: Step3Props) 
           <Detail label="Expected Direction" value={analysis.improvement.expectedDirection} />
         </div>
       </section>
+
+      {phase4Error && <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm leading-6 text-destructive">{phase4Error}</p>}
 
       <div className="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:items-center">
         <button onClick={onBack} className="flex items-center justify-center gap-2 rounded-md bg-secondary px-4 py-3 font-medium text-secondary-foreground transition hover:bg-secondary/90"><ChevronLeft size={18} aria-hidden="true" /> Back</button>
